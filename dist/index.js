@@ -113,9 +113,9 @@ app.post("/ussd", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { sessionId, serviceCode, phoneNumber, text } = req === null || req === void 0 ? void 0 : req.body;
         let response = "";
-        if (text == "") {
+        if (text == "" || text == "189") {
             // This is the first request. Note how we start the response with CON
-            response = `CON Ikaze. Andika kode yawe.`;
+            response = `Ikaze. Andika kode yawe.`;
         }
         else if (text.length >= 4) {
             //check code
@@ -144,6 +144,9 @@ app.post("/ussd", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             else {
                 response = "CON Ntibikunze. Mugerageze nanone";
             }
+        }
+        else {
+            response = `Code ntibaho!`;
         }
         // Send the response back to the API
         res.set("Content-Type: text/plain");
