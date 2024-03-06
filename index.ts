@@ -29,7 +29,7 @@ app.get("/users", async (req: Request, res: Response) => {
     res.json(rows);
   } catch (error) {
     console.error("Error fetching users:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error", message: error  });
   }
 });
 
@@ -39,13 +39,23 @@ app.get("/codes", async (req: Request, res: Response) => {
     res.json(rows);
   } catch (error) {
     console.error("Error fetching random_codes:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error", message: error  });
   }
 });
 
 app.get("/candidates", async (req: Request, res: Response) => {
   try {
     const { rows } = await pool.query("SELECT * FROM candidates");
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching candidates:", error);
+    res.status(500).json({ error: "Internal Server Error", message: error });
+  }
+});
+
+app.get("/votes", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query("SELECT * FROM votes");
     res.json(rows);
   } catch (error) {
     console.error("Error fetching candidates:", error);
@@ -114,7 +124,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
     res.send(response);
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error",  message: error  });
   }
 });
 

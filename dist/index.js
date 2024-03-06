@@ -62,7 +62,7 @@ app.get("/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     catch (error) {
         console.error("Error fetching users:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: "Internal Server Error", message: error });
     }
 }));
 app.get("/codes", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -72,12 +72,22 @@ app.get("/codes", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     catch (error) {
         console.error("Error fetching random_codes:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: "Internal Server Error", message: error });
     }
 }));
 app.get("/candidates", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { rows } = yield pool.query("SELECT * FROM candidates");
+        res.json(rows);
+    }
+    catch (error) {
+        console.error("Error fetching candidates:", error);
+        res.status(500).json({ error: "Internal Server Error", message: error });
+    }
+}));
+app.get("/votes", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { rows } = yield pool.query("SELECT * FROM votes");
         res.json(rows);
     }
     catch (error) {
@@ -141,7 +151,7 @@ app.post("/ussd", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     catch (error) {
         console.error("Error:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: "Internal Server Error", message: error });
     }
 }));
 function checkCode(code) {
