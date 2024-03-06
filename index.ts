@@ -86,6 +86,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
     let response = "";
     if (text == "" || text=="189") {
       // This is the first request. Note how we start the response with CON
+      res.header("Freeflow", "fc");
       response = `Ikaze. Andika kode yawe.`;
     } else if (text.length >= 4) {
       //check code
@@ -95,12 +96,14 @@ app.post("/ussd", async (req: Request, res: Response) => {
       let r = await checkCode(text);
 
       if (r?.length < 1) {
+        res.header("Freeflow", "fb");
         response = "CON Code ntibaho!";
       } else {
         candidates = [...r];
         r?.map((c) => {
           t += `${c?.id}. ${c.name}\n`;
         });
+        res.header("Freeflow", "fc");
         response = `CON Hitamo UmuCandida muri aba
       ${t}
       `;
@@ -114,19 +117,24 @@ app.post("/ussd", async (req: Request, res: Response) => {
       step = 0;
       if (r) {
         response = "CON Murakoze gutora";
+        res.header("Freeflow", "fb");
       } else {
         response = "CON Ntibikunze. Mugerageze nanone";
+        res.header("Freeflow", "fb");
       }
     } else {
+      res.header("Freeflow", "fb");
       response = `Code ntibaho!`;
     }
 
     // Send the response back to the API
     res.set("Content-Type: text/plain");
+   
     res.send(response);
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal Server Error",  message: error  });
+
   }
 });
 

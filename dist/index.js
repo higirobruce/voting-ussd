@@ -115,6 +115,7 @@ app.post("/ussd", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         let response = "";
         if (text == "" || text == "189") {
             // This is the first request. Note how we start the response with CON
+            res.header("Freeflow", "fc");
             response = `Ikaze. Andika kode yawe.`;
         }
         else if (text.length >= 4) {
@@ -123,6 +124,7 @@ app.post("/ussd", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             votingCode = text;
             let r = yield checkCode(text);
             if ((r === null || r === void 0 ? void 0 : r.length) < 1) {
+                res.header("Freeflow", "fb");
                 response = "CON Code ntibaho!";
             }
             else {
@@ -130,6 +132,7 @@ app.post("/ussd", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 r === null || r === void 0 ? void 0 : r.map((c) => {
                     t += `${c === null || c === void 0 ? void 0 : c.id}. ${c.name}\n`;
                 });
+                res.header("Freeflow", "fc");
                 response = `CON Hitamo UmuCandida muri aba
       ${t}
       `;
@@ -140,12 +143,15 @@ app.post("/ussd", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             step = 0;
             if (r) {
                 response = "CON Murakoze gutora";
+                res.header("Freeflow", "fb");
             }
             else {
                 response = "CON Ntibikunze. Mugerageze nanone";
+                res.header("Freeflow", "fb");
             }
         }
         else {
+            res.header("Freeflow", "fb");
             response = `Code ntibaho!`;
         }
         // Send the response back to the API
