@@ -105,16 +105,14 @@ app.post("/ussd", async (req: Request, res: Response) => {
 
       if (r?.length < 1) {
         res.header("Freeflow", "fb");
-        response = "CON Code ntibaho!";
+        response = "Kode ntibaho!";
       } else {
         candidates = [...r];
         r?.map((c) => {
           t += `${c?.id}. ${c.name}\n`;
         });
         res.header("Freeflow", "fc");
-        response = `CON Hitamo UmuCandida muri aba
-      ${t}
-      `;
+        response = `Hitamo Umu kandida muri aba \n${t}`;
       }
     } else if (text.length === 1) {
       let r = await submitVote(
@@ -124,10 +122,10 @@ app.post("/ussd", async (req: Request, res: Response) => {
       );
       step = 0;
       if (r) {
-        response = "CON Murakoze gutora";
+        response = "Murakoze gutora";
         res.header("Freeflow", "fb");
       } else {
-        response = "CON Ntibikunze. Mugerageze nanone";
+        response = "Ntibikunze. Mugerageze nanone";
         res.header("Freeflow", "fb");
       }
     } else {
@@ -157,6 +155,10 @@ async function checkCode(code: string) {
   if (foundCodes.rowCount == 0) {
     return [];
   } else {
+  //   await submitVote(code, [{
+  //     "id": 5,
+  //     "name": "Impfabusa"
+  // }], 'pending')
     return foundCandidates?.rows;
   }
 }
@@ -166,7 +168,7 @@ async function submitVote(code: string, candidates: any[], status: string) {
     let cand = candidates[0];
     let __id = cand?.id;
     let __name = cand?.name;
-    console.log(cand);
+    
     const insertedVotes = await pool.query(
       `INSERT into votes (candidate_id, candidate_name, voting_code, status) VALUES (${__id}, '${__name}', '${code}', '${status}')`
     );
