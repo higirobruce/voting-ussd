@@ -58,7 +58,12 @@ app.get("/candidates", async (req: Request, res: Response) => {
 
 app.get("/votes", async (req: Request, res: Response) => {
   try {
-    const { rows } = await pool.query("SELECT * FROM votes");
+    const { rows } = await pool.query(`SELECT
+              candidate_name,
+              COUNT(*) AS total_votes,
+              COUNT(*) * 100.0 / SUM(COUNT(*)) OVER () AS percentage
+            FROM votes
+            GROUP BY candidate_name`);
     res.json(rows);
   } catch (error) {
     console.error("Error fetching candidates:", error);

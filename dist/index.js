@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const bodyParser = __importStar(require("body-parser"));
 const pg_1 = require("pg");
+const cors_1 = __importDefault(require("cors"));
 const DB_USER = process.env.DB_USER || "brucehigiro";
 const DB_PASS = process.env.DB_PASS || "Blessings_19891";
 const DB_HOST = process.env.DB_HOST || "127.0.0.1";
@@ -47,6 +48,7 @@ const DB_NAME = process.env.DB_NAME || "mydb";
 const connectionString = `postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
 const app = (0, express_1.default)();
 const port = process.env.PORT || 3000;
+app.use((0, cors_1.default)());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 const pool = new pg_1.Pool({
@@ -87,7 +89,12 @@ app.get("/candidates", (req, res) => __awaiter(void 0, void 0, void 0, function*
 }));
 app.get("/votes", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { rows } = yield pool.query("SELECT * FROM votes");
+        const { rows } = yield pool.query(`SELECT
+              candidate_name,
+              COUNT(*) AS total_votes,
+              COUNT(*) * 100.0 / SUM(COUNT(*)) OVER () AS percentage
+            FROM votes
+            GROUP BY candidate_name`);
         res.json(rows);
     }
     catch (error) {
