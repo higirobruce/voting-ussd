@@ -2,6 +2,8 @@
 import express, { Request, Response } from "express";
 import * as bodyParser from "body-parser";
 import { Pool } from "pg";
+import cors from "cors";
+
 const DB_USER = process.env.DB_USER || "brucehigiro";
 const DB_PASS = process.env.DB_PASS || "Blessings_19891";
 const DB_HOST = process.env.DB_HOST || "127.0.0.1";
@@ -12,6 +14,7 @@ const connectionString = `postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_POR
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -29,7 +32,7 @@ app.get("/users", async (req: Request, res: Response) => {
     res.json(rows);
   } catch (error) {
     console.error("Error fetching users:", error);
-    res.status(500).json({ error: "Internal Server Error", message: error  });
+    res.status(500).json({ error: "Internal Server Error", message: error });
   }
 });
 
@@ -39,7 +42,7 @@ app.get("/codes", async (req: Request, res: Response) => {
     res.json(rows);
   } catch (error) {
     console.error("Error fetching random_codes:", error);
-    res.status(500).json({ error: "Internal Server Error", message: error  });
+    res.status(500).json({ error: "Internal Server Error", message: error });
   }
 });
 
@@ -84,7 +87,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
   try {
     const { sessionId, serviceCode, phoneNumber, text } = req?.body;
     let response = "";
-    if (text == "" || text=="189") {
+    if (text == "" || text == "189") {
       // This is the first request. Note how we start the response with CON
       res.header("Freeflow", "fc");
       response = `Ikaze. Andika kode yawe.`;
@@ -129,12 +132,11 @@ app.post("/ussd", async (req: Request, res: Response) => {
 
     // Send the response back to the API
     res.set("Content-Type: text/plain");
-   
+
     res.send(response);
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json({ error: "Internal Server Error",  message: error  });
-
+    res.status(500).json({ error: "Internal Server Error", message: error });
   }
 });
 
