@@ -252,11 +252,9 @@ async function submitVote(
     let __name = cand?.name;
 
     await pool.query(
-      `INSERT into votes (candidate_id, candidate_name, voting_code, status) VALUES (${__id}, '${__name}', '${code.toUpperCase()}', '${status}')`
-    );
-
-    await pool.query(
-      `INSERT into votes_with_phone (candidate_id, candidate_name, voting_code, phoneNumber) VALUES (${__id}, '${__name}', '${code.toUpperCase()}', '${phoneNumber}' )`
+      `INSERT into votes 
+      (candidate_id, candidate_name, voting_code, status, phoneNumber) 
+      VALUES (${__id}, '${__name}', '${code.toUpperCase()}', '${status}', '${phoneNumber}')`
     );
 
     return true;
