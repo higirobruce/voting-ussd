@@ -213,6 +213,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
 
 async function checkCode(code: string) {
   //check code
+  console.log(code.toUpperCase())
   const foundCodes = await pool.query(
     `SELECT * FROM random_codes WHERE code='${code.toUpperCase()}'`
   );
