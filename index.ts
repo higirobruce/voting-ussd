@@ -114,13 +114,13 @@ app.get("/total_denied_votes", async (req: Request, res: Response) => {
 
 app.get("/approved_votes", async (req: Request, res: Response) => {
   try {
-    const {rows } = await pool.query(`SELECT
+    const { rows } = await pool.query(`SELECT
     candidate_name,
     SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved_votes,
     COUNT(*) AS total_votes,
     (SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS percentage_of_approved_votes
   FROM votes
-  GROUP BY candidate_name;`)
+  GROUP BY candidate_name;`);
     // const { rows } = await pool.query(`SELECT
     //           candidate_name,
     //           COUNT(*) AS total_votes,
@@ -183,7 +183,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
         res.header("Freeflow", "fc");
         response = `Hitamo Umu kandida \n${t}`;
       }
-    } else if (text.length === 1 && text=="1") {
+    } else if (text.length === 1 && text == "1") {
       req.session.ussdStep = 3;
       req.session.userId = text;
       res.header("Freeflow", "fc");
@@ -193,7 +193,8 @@ app.post("/ussd", async (req: Request, res: Response) => {
       let r = await submitVote(
         votingCode,
         candidates?.filter((c) => c?.id == 1),
-        text == "11" ? "approved" : "denied"
+        text == "11" ? "approved" : "denied",
+        req.body?.phoneNumber
       );
       step = 0;
       if (r) {
@@ -220,7 +221,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
 
 async function checkCode(code: string) {
   //check code
-  console.log(code.toUpperCase())
+  console.log(code.toUpperCase());
   const foundCodes = await pool.query(
     `SELECT * FROM random_codes WHERE code='${code.toUpperCase()}'`
   );
@@ -239,14 +240,23 @@ async function checkCode(code: string) {
   }
 }
 
-async function submitVote(code: string, candidates: any[], status: string) {
+async function submitVote(
+  code: string,
+  candidates: any[],
+  status: string,
+  phoneNumber: string
+) {
   try {
     let cand = candidates[0];
     let __id = cand?.id;
     let __name = cand?.name;
 
-    const insertedVotes = await pool.query(
+    await pool.query(
       `INSERT into votes (candidate_id, candidate_name, voting_code, status) VALUES (${__id}, '${__name}', '${code.toUpperCase()}', '${status}')`
+    );
+
+    await pool.query(
+      `INSERT into votes_with_phone (candidate_id, candidate_name, voting_code, phoneNumber) VALUES (${__id}, '${__name}', '${code.toUpperCase()}', '${phoneNumber}' )`
     );
 
     return true;
