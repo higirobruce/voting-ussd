@@ -114,18 +114,20 @@ app.get("/total_denied_votes", async (req: Request, res: Response) => {
 
 app.get("/approved_votes", async (req: Request, res: Response) => {
   try {
-    let { rowCount } = await pool.query(`SELECT
-    *
+    const {rows } = await pool.query(`SELECT
+    candidate_name,
+    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved_votes,
+    COUNT(*) AS total_votes,
+    (SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) * 100.0) / COUNT(*) AS percentage_of_approved_votes
   FROM votes
-  where status='approved'
-  GROUP BY candidate_name`);
-    const { rows } = await pool.query(`SELECT
-              candidate_name,
-              COUNT(*) AS total_votes,
-              COUNT(*) * 100.0 / ${rowCount}) OVER () AS percentage
-            FROM votes
-            where status='approved'
-            GROUP BY candidate_name`);
+  GROUP BY candidate_name;`)
+    // const { rows } = await pool.query(`SELECT
+    //           candidate_name,
+    //           COUNT(*) AS total_votes,
+    //           COUNT(*) * 100.0 / SUM(COUNT(*)) OVER () AS percentage
+    //         FROM votes
+    //         where status='approved'
+    //         GROUP BY candidate_name`);
     res.json(rows);
   } catch (error) {
     console.error("Error fetching candidates:", error);
@@ -181,7 +183,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
         res.header("Freeflow", "fc");
         response = `Hitamo Umu kandida \n${t}`;
       }
-    } else if (text.length === 1 && text == "1") {
+    } else if (text.length === 1 && text=="1") {
       req.session.ussdStep = 3;
       req.session.userId = text;
       res.header("Freeflow", "fc");
@@ -218,7 +220,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
 
 async function checkCode(code: string) {
   //check code
-  console.log(code.toUpperCase());
+  console.log(code.toUpperCase())
   const foundCodes = await pool.query(
     `SELECT * FROM random_codes WHERE code='${code.toUpperCase()}'`
   );
