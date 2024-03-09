@@ -176,16 +176,16 @@ app.post("/ussd", async (req: Request, res: Response) => {
         res.header("Freeflow", "fc");
         response = `Hitamo Umu kandida \n${t}`;
       }
-    } else if (text.length === 1 && req.session.ussdStep == 2) {
+    } else if (text.length === 1 && text=="1") {
       req.session.ussdStep = 3;
       req.session.userId = text;
       res.header("Freeflow", "fc");
       response = "Emeza \n1. Yego\n2. Oya, Ndifashe";
-    } else if (text.length === 1 && req.session.ussdStep == 3) {
+    } else if (text.length === 1) {
       let choice = req.session.userId;
       let r = await submitVote(
         votingCode,
-        candidates?.filter((c) => c?.id == Number(choice)),
+        candidates?.filter((c) => c?.id == Number(text)),
         text == "1" ? "approved" : "denied"
       );
       step = 0;
