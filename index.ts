@@ -155,7 +155,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
       // This is the first request. Note how we start the response with CON
       res.header("Freeflow", "fc");
       response = `Ikaze. Andika kode yawe.`;
-    } else if (text.length >= 4 && req.session.ussdStep === 1) {
+    } else if (text.length >= 4) {
       req.session.ussdStep = 2;
 
       //check code
