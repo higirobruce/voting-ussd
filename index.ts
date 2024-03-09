@@ -186,7 +186,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
       let r = await submitVote(
         votingCode,
         candidates?.filter((c) => c?.id == 1),
-        text == "1" ? "approved" : "denied"
+        text == "11" ? "approved" : "denied"
       );
       step = 0;
       if (r) {
