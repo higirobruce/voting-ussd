@@ -3,6 +3,8 @@ import express, { Request, Response } from "express";
 import * as bodyParser from "body-parser";
 import { Pool } from "pg";
 import cors from "cors";
+import session from "express-session";
+import cookieParser from "cookie-parser";
 
 const DB_USER = process.env.DB_USER || "brucehigiro";
 const DB_PASS = process.env.DB_PASS || "Blessings_19891";
@@ -13,10 +15,28 @@ const connectionString = `postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_POR
 
 const app = express();
 const port = process.env.PORT || 3000;
+const oneDay = 1000 * 60 * 60 * 24;
+
+declare module "express-session" {
+  export interface SessionData {
+    user: any;
+    userId: any;
+    accessToken: any;
+    ussdStep: any;
+  }
+}
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(
+  session({
+    secret: "thisismysecrctekeyfhrgfgrfrty84fwir767",
+    saveUninitialized: true,
+    cookie: { maxAge: oneDay },
+    resave: false,
+  })
+);
 
 const pool = new Pool({
   connectionString,
@@ -56,13 +76,50 @@ app.get("/candidates", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/votes", async (req: Request, res: Response) => {
+app.get("/total_votes", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query(`SELECT
+              COUNT(*) AS total_votes
+            FROM votes`);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching candidates:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/total_approved_votes", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query(`SELECT
+              COUNT(*) AS total_votes
+            FROM votes where status='approved'`);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching candidates:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/total_denied_votes", async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query(`SELECT
+              COUNT(*) AS total_votes
+            FROM votes where status='denied'`);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching candidates:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/approved_votes", async (req: Request, res: Response) => {
   try {
     const { rows } = await pool.query(`SELECT
               candidate_name,
               COUNT(*) AS total_votes,
               COUNT(*) * 100.0 / SUM(COUNT(*)) OVER () AS percentage
             FROM votes
+            where status='approved'
             GROUP BY candidate_name`);
     res.json(rows);
   } catch (error) {
@@ -93,10 +150,14 @@ app.post("/ussd", async (req: Request, res: Response) => {
     const { sessionId, serviceCode, phoneNumber, text } = req?.body;
     let response = "";
     if (text == "" || text == "189") {
+      step = 1;
+      req.session.ussdStep = 1;
       // This is the first request. Note how we start the response with CON
       res.header("Freeflow", "fc");
       response = `Ikaze. Andika kode yawe.`;
-    } else if (text.length >= 4) {
+    } else if (text.length >= 4 && req.session.ussdStep === 1) {
+      req.session.ussdStep = 2;
+
       //check code
       let t = "";
       votingCode = text;
@@ -111,14 +172,21 @@ app.post("/ussd", async (req: Request, res: Response) => {
         r?.map((c) => {
           t += `${c?.id}. ${c.name}\n`;
         });
+
         res.header("Freeflow", "fc");
-        response = `Hitamo Umu kandida muri aba \n${t}`;
+        response = `Hitamo Umu kandida \n${t}`;
       }
-    } else if (text.length === 1) {
+    } else if (text.length === 1 && req.session.ussdStep == 2) {
+      req.session.ussdStep = 3;
+      req.session.userId = text;
+      res.header("Freeflow", "fc");
+      response = "Emeza \n1. Yego\n2. Oya, Ndifashe";
+    } else if (text.length === 1 && req.session.ussdStep == 3) {
+      let choice = req.session.userId;
       let r = await submitVote(
         votingCode,
-        candidates?.filter((c) => c?.id == Number(text)),
-        "success"
+        candidates?.filter((c) => c?.id == Number(choice)),
+        text == "1" ? "approved" : "denied"
       );
       step = 0;
       if (r) {
@@ -146,7 +214,7 @@ app.post("/ussd", async (req: Request, res: Response) => {
 async function checkCode(code: string) {
   //check code
   const foundCodes = await pool.query(
-    `SELECT * FROM random_codes WHERE code='${code}'`
+    `SELECT * FROM random_codes WHERE code='${code.toUpperCase()}'`
   );
   //get candidates
 
@@ -155,10 +223,10 @@ async function checkCode(code: string) {
   if (foundCodes.rowCount == 0) {
     return [];
   } else {
-  //   await submitVote(code, [{
-  //     "id": 5,
-  //     "name": "Impfabusa"
-  // }], 'pending')
+    //   await submitVote(code, [{
+    //     "id": 5,
+    //     "name": "Impfabusa"
+    // }], 'pending')
     return foundCandidates?.rows;
   }
 }
@@ -168,9 +236,9 @@ async function submitVote(code: string, candidates: any[], status: string) {
     let cand = candidates[0];
     let __id = cand?.id;
     let __name = cand?.name;
-    
+
     const insertedVotes = await pool.query(
-      `INSERT into votes (candidate_id, candidate_name, voting_code, status) VALUES (${__id}, '${__name}', '${code}', '${status}')`
+      `INSERT into votes (candidate_id, candidate_name, voting_code, status) VALUES (${__id}, '${__name}', '${code.toUpperCase()}', '${status}')`
     );
 
     return true;
